@@ -1,0 +1,161 @@
+// ===== 設定（スタートを押したときに画面の入力欄から読み込む） =====
+let workSeconds = 30;     // 動く秒数
+let restSeconds = 30;     // 休む秒数
+let totalSets = 5;        // セット数
+let changeInterval = 2000; // 方向が変わる間隔（ミリ秒）
+
+// 6つの方向のリスト
+const directions = ['左前', '右前', '左横', '右横', '左奥', '右奥'];
+
+// 画面の部品
+const directionBox = document.getElementById('direction');
+const statusBox = document.getElementById('status');
+const timeBox = document.getElementById('time');
+const startButton = document.getElementById('startButton');
+
+// 設定の入力欄
+const settingsBox = document.getElementById('settings');
+const intervalInput = document.getElementById('intervalInput');
+const workInput = document.getElementById('workInput');
+const restInput = document.getElementById('restInput');
+const setsInput = document.getElementById('setsInput');
+
+// 入力欄から数字を読む。空っぽや範囲外なら直してから返す
+function readNumber(input, min, max) {
+  let value = Number(input.value);
+  if (input.value === '' || Number.isNaN(value)) {
+    value = Number(input.defaultValue); // 空っぽなら最初の値に戻す
+  }
+  if (value < min) {
+    value = min;
+  }
+  if (value > max) {
+    value = max;
+  }
+  input.value = value; // 直した値を入力欄にも書き戻す
+  return value;
+}
+
+// 入力欄の値を設定に読み込む
+function loadSettings() {
+  changeInterval = readNumber(intervalInput, 1, 4) * 1000; // 秒 → ミリ秒
+  workSeconds = Math.round(readNumber(workInput, 5, 300));
+  restSeconds = Math.round(readNumber(restInput, 5, 300));
+  totalSets = Math.round(readNumber(setsInput, 1, 20));
+}
+
+// ===== 練習の状態 =====
+let lastDirection = '';   // 前回表示した方向
+let isRunning = false;    // 動いている最中かどうか
+let phase = 'work';       // 'work'（動く）か 'rest'（休み）
+let currentSet = 1;       // 今何セット目か
+let remaining = 0;        // 今の区間の残り秒数
+let countdownTimer = null; // 1秒ごとのカウントダウン用タイマー
+let directionTimer = null; // 方向切り替え用タイマー
+
+// ランダムな方向を1つ選んで表示する（前回と同じ方向は出さない）
+function showRandomDirection() {
+  let next;
+  do {
+    const index = Math.floor(Math.random() * directions.length);
+    next = directions[index];
+  } while (next === lastDirection);
+
+  directionBox.textContent = next;
+  lastDirection = next;
+}
+
+// 上の「何セット目・動く/休み」と、下の「残り秒数」を書き換える
+function updateScreen() {
+  let phaseName;
+  if (phase === 'work') {
+    phaseName = '動く';
+  } else {
+    phaseName = '休み';
+  }
+  statusBox.textContent = currentSet + ' / ' + totalSets + ' セット　' + phaseName;
+  timeBox.textContent = '残り ' + remaining + ' 秒';
+}
+
+// 動く区間を始める
+function startWork() {
+  phase = 'work';
+  document.body.className = 'work'; // CSSで「動く」の色にする
+  remaining = workSeconds;
+  showRandomDirection();
+  directionTimer = setInterval(showRandomDirection, changeInterval);
+  updateScreen();
+}
+
+// 休みの区間を始める
+function startRest() {
+  phase = 'rest';
+  document.body.className = 'rest'; // CSSで「休み」の色にする
+  remaining = restSeconds;
+  clearInterval(directionTimer); // 方向の切り替えを止める
+  directionBox.textContent = '休み';
+  updateScreen();
+}
+
+// 1秒ごとに呼ばれる
+function tick() {
+  remaining = remaining - 1;
+
+  // まだ時間が残っているなら、表示を更新するだけ
+  if (remaining > 0) {
+    updateScreen();
+    return;
+  }
+
+  // 残りが0になったら、次の区間へ
+  if (phase === 'work') {
+    if (currentSet === totalSets) {
+      finish();      // 最後のセットが終わった
+    } else {
+      startRest();   // 休みへ
+    }
+  } else {
+    currentSet = currentSet + 1;
+    startWork();     // 休みが終わったら次のセット
+  }
+}
+
+// スタート
+function start() {
+  loadSettings();
+  settingsBox.disabled = true; // 練習中は設定をいじれないようにする
+  isRunning = true;
+  currentSet = 1;
+  lastDirection = '';
+  startButton.textContent = 'ストップ';
+  startWork();
+  countdownTimer = setInterval(tick, 1000);
+}
+
+// ストップ（途中でやめる）
+function stop() {
+  isRunning = false;
+  settingsBox.disabled = false; // 設定をまたいじれるようにする
+  document.body.className = ''; // 色を元に戻す
+  clearInterval(countdownTimer);
+  clearInterval(directionTimer);
+  startButton.textContent = 'スタート';
+  directionBox.textContent = '準備OK';
+  statusBox.textContent = '';
+  timeBox.textContent = '';
+}
+
+// 全セット終わった
+function finish() {
+  stop();
+  directionBox.textContent = 'おわり';
+}
+
+// ボタンが押されたとき：動いていれば止める、止まっていれば始める
+startButton.addEventListener('click', function () {
+  if (isRunning) {
+    stop();
+  } else {
+    start();
+  }
+});

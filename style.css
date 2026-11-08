@@ -1,0 +1,128 @@
+/* ===== 全体 ===== */
+* {
+  box-sizing: border-box; /* 幅に枠線と余白を含めて計算する */
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, "Hiragino Sans", "Yu Gothic UI", "Meiryo", sans-serif;
+  background: #f5f5f5;
+  color: #222;
+  text-align: center;
+}
+
+h1 {
+  font-size: 20px;
+  margin: 12px 0 0;
+}
+
+/* ===== 練習中の表示 ===== */
+#status {
+  font-size: 22px;
+  font-weight: bold;
+  min-height: 1.5em; /* 空っぽでも高さを確保して、画面がガタつかないようにする */
+  margin-top: 8px;
+}
+
+#direction {
+  font-size: min(20vw, 30vh); /* 画面の幅の20%か、高さの30%の小さいほう */
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 8px 0;
+  white-space: nowrap; /* 途中で改行しない */
+}
+
+#time {
+  font-size: 32px;
+  font-weight: bold;
+  min-height: 1.4em;
+}
+
+/* ===== スタート／ストップボタン ===== */
+#startButton {
+  display: block;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  margin: 16px auto;
+  padding: 18px;
+  font-size: 28px;
+  font-weight: bold;
+  border: none;
+  border-radius: 16px;
+  background: #2563eb;
+  color: white;
+  cursor: pointer;
+}
+
+#startButton:active {
+  transform: scale(0.97); /* 押した瞬間に少し縮んで、押した感じを出す */
+}
+
+/* ===== 設定 ===== */
+#settings {
+  width: calc(100% - 32px);
+  max-width: 480px;
+  margin: 0 auto 32px;
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  background: white;
+  color: #222;
+  text-align: left;
+}
+
+#settings legend {
+  font-weight: bold;
+  padding: 0 6px;
+}
+
+#settings label {
+  display: flex;
+  justify-content: space-between; /* 文字は左、入力欄は右 */
+  align-items: center;
+  padding: 10px 0;
+  font-size: 18px;
+  border-bottom: 1px solid #eee;
+}
+
+#settings label:last-child {
+  border-bottom: none;
+}
+
+#settings input {
+  width: 90px;
+  font-size: 20px; /* 16px以上にするとiPhoneで勝手にズームされない */
+  padding: 6px;
+  text-align: center;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+}
+
+#settings:disabled {
+  opacity: 0.4; /* 練習中は薄くして、触れないことがわかるようにする */
+}
+
+/* ===== 動く／休みで色を変える（bodyのclassはscript.jsが付ける） ===== */
+body.work {
+  background: #111;
+  color: white;
+}
+
+body.work #direction,
+body.rest #direction {
+  font-size: min(36vw, 45vh); /* 練習中は2文字だけなので、もっと大きくする */
+}
+
+body.work #direction {
+  color: #ffd400; /* 黒の上の黄色は遠くからでも見やすい */
+}
+
+body.rest {
+  background: #1e40af;
+  color: white;
+}
+
+body.work #startButton,
+body.rest #startButton {
+  background: #dc2626; /* 練習中はストップボタンを赤に */
+}
