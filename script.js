@@ -19,6 +19,39 @@ const intervalInput = document.getElementById('intervalInput');
 const workInput = document.getElementById('workInput');
 const restInput = document.getElementById('restInput');
 const setsInput = document.getElementById('setsInput');
+const soundInput = document.getElementById('soundInput');
+
+// ===== 音 =====
+// ブラウザの中で音を作る仕組み（Web Audio API）。音のファイルはいらない
+let audioContext = null;
+
+// 音の準備。スマホは「人がボタンを押したとき」にしか音を出す許可をくれないので、
+// スタートボタンが押されたときにこれを呼ぶ
+function prepareSound() {
+  if (audioContext === null) {
+    audioContext = new AudioContext();
+  }
+  audioContext.resume(); // 止まっていたら動かす
+}
+
+// 「ピッ」と短く鳴らす
+function beep() {
+  if (!soundInput.checked || audioContext === null) {
+    return; // 音オフなら何もしない
+  }
+  const now = audioContext.currentTime;     // 今の時刻（秒）
+  const oscillator = audioContext.createOscillator(); // 音のもと（発振器）
+  const volume = audioContext.createGain();           // 音量のつまみ
+
+  oscillator.frequency.value = 880; // 音の高さ（880Hz＝高めの「ラ」）
+  volume.gain.setValueAtTime(0.3, now);                    // 最初の音量
+  volume.gain.exponentialRampToValueAtTime(0.001, now + 0.15); // 0.15秒でスッと消す
+
+  oscillator.connect(volume);                 // 音のもと → 音量つまみ
+  volume.connect(audioContext.destination);  // 音量つまみ → スピーカー
+  oscillator.start(now);
+  oscillator.stop(now + 0.15);
+}
 
 // 入力欄から数字を読む。空っぽや範囲外なら直してから返す
 function readNumber(input, min, max) {
@@ -63,6 +96,7 @@ function showRandomDirection() {
 
   directionBox.textContent = next;
   lastDirection = next;
+  beep(); // 切り替わったら鳴らす
 }
 
 // 上の「何セット目・動く/休み」と、下の「残り秒数」を書き換える
@@ -122,6 +156,7 @@ function tick() {
 
 // スタート
 function start() {
+  prepareSound(); // ボタンを押したこの瞬間に音の準備をしておく
   loadSettings();
   settingsBox.disabled = true; // 練習中は設定をいじれないようにする
   isRunning = true;
