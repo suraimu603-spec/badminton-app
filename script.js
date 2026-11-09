@@ -77,6 +77,37 @@ function loadSettings() {
   totalSets = Math.round(readNumber(setsInput, 1, 20));
 }
 
+// ===== スリープ防止（Wake Lock） =====
+// ブラウザに「画面を消さないで」と頼む仕組み。対応していないブラウザでは何もしない
+let wakeLock = null;
+
+async function keepScreenOn() {
+  if (!('wakeLock' in navigator)) {
+    return; // このブラウザはWake Lockに対応していない
+  }
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+  } catch (error) {
+    // 電池残量が少ないときなどは断られることがある。アプリは止めずにそのまま続ける
+    console.log('Wake Lockを取れなかった:', error.message);
+  }
+}
+
+function allowScreenOff() {
+  if (wakeLock !== null) {
+    wakeLock.release(); // 「消さないで」のお願いを取り下げる
+    wakeLock = null;
+  }
+}
+
+// 別のアプリに切り替えたりするとWake Lockは自動で外れる。
+// 練習中にこの画面へ戻ってきたら、もう一度お願いし直す
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && isRunning) {
+    keepScreenOn();
+  }
+});
+
 // ===== 練習の状態 =====
 let lastDirection = '';   // 前回表示した方向
 let isRunning = false;    // 動いている最中かどうか
@@ -157,6 +188,7 @@ function tick() {
 // スタート
 function start() {
   prepareSound(); // ボタンを押したこの瞬間に音の準備をしておく
+  keepScreenOn(); // 練習中は画面を消さない
   loadSettings();
   settingsBox.disabled = true; // 練習中は設定をいじれないようにする
   isRunning = true;
@@ -170,6 +202,7 @@ function start() {
 // ストップ（途中でやめる）
 function stop() {
   isRunning = false;
+  allowScreenOff(); // 練習が終わったら、画面が消えてもいい状態に戻す
   settingsBox.disabled = false; // 設定をまたいじれるようにする
   document.body.className = ''; // 色を元に戻す
   clearInterval(countdownTimer);
